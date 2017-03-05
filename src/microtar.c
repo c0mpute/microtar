@@ -396,34 +396,40 @@ int mtar_write_file_header(mtar_t *tar, const char *name, unsigned size, const s
   memset(&h, 0, sizeof(h));
   strcpy(h.name, name);
   h.size = size;
-  if(S_ISREG(st->st_mode)) {
+  if(st != NULL) {
+    if(S_ISREG(st->st_mode)) {
+      h.type = MTAR_TREG;
+    }
+    else if(S_ISDIR(st->st_mode)) {
+      h.type = MTAR_TDIR;
+    }
+    else if(S_ISLNK(st->st_mode)) {
+      h.type = MTAR_TSYM;
+      readlink(name, h.linkname, 100);
+    }
+    else if(S_ISBLK(st->st_mode)) {
+      h.type = MTAR_TBLK;
+    }
+    else if(S_ISDIR(st->st_mode)) {
+      h.type = MTAR_TDIR;
+    }
+    else if(S_ISCHR(st->st_mode)) {
+      h.type = MTAR_TCHR;
+    }
+    else if(S_ISFIFO(st->st_mode)) {
+      h.type = MTAR_TFIFO;
+    }
+    h.mode = st->st_mode;
+    h.mtime = st->st_mtime;
+    h.uid = st->st_uid;
+    h.gid = st->st_gid;
+    h.devmajor = major(st->st_dev);
+    h.devminor = minor(st->st_dev);
+  }
+  else {
     h.type = MTAR_TREG;
+    h.mode = 0644;
   }
-  else if(S_ISDIR(st->st_mode)) {
-    h.type = MTAR_TDIR;
-  }
-  else if(S_ISLNK(st->st_mode)) {
-    h.type = MTAR_TSYM;
-    readlink(name, h.linkname, 100);
-  }
-  else if(S_ISBLK(st->st_mode)) {
-    h.type = MTAR_TBLK;
-  }
-  else if(S_ISDIR(st->st_mode)) {
-    h.type = MTAR_TDIR;
-  }
-  else if(S_ISCHR(st->st_mode)) {
-    h.type = MTAR_TCHR;
-  }
-  else if(S_ISFIFO(st->st_mode)) {
-    h.type = MTAR_TFIFO;
-  }
-  h.mode = st->st_mode;
-  h.mtime = st->st_mtime;
-  h.uid = st->st_uid;
-  h.gid = st->st_gid;
-  h.devmajor = major(st->st_dev);
-  h.devminor = minor(st->st_dev);
 
   /* Write header */
   return mtar_write_header(tar, &h);
@@ -468,7 +474,7 @@ mtar_write_file(mtar_t *tar, char *fname) {
 	stret = lstat(fname, &st);
 	if(stret == 0) {
 		if(S_ISLNK(st.st_mode)) {
-			mtar_write_file_header(tar, fname, 0, &st);
+  			mtar_write_file_header(tar, fname, 0, &st);
 			return 0;
 		}
 		fp = fopen(fname, "rb");

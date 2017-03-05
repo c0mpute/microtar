@@ -1,5 +1,5 @@
 # microtar
-A lightweight tar library written in ANSI C
+A lightweight POSIX compliant C tar library
 
 
 ## Basic Usage
@@ -43,9 +43,9 @@ const char *str2 = "Goodbye world";
 mtar_open(&tar, "test.tar", "w");
 
 /* Write strings to files `test1.txt` and `test2.txt` */
-mtar_write_file_header(&tar, "test1.txt", strlen(str1));
+mtar_write_file_header(&tar, "test1.txt", strlen(str1), NULL);
 mtar_write_data(&tar, str1, strlen(str1));
-mtar_write_file_header(&tar, "test2.txt", strlen(str2));
+mtar_write_file_header(&tar, "test2.txt", strlen(str2), NULL);
 mtar_write_data(&tar, str2, strlen(str2));
 
 /* Finalize -- this needs to be the last thing done before closing */
@@ -99,6 +99,10 @@ Name    | Arguments                                      | Description
 --------|------------------------------------------------|---------------------
 `write` | `mtar_t *tar, const void *data, unsigned size` | Write data to the stream
 
+
+#### TODO
+
+Tar extraction is still not implemented, since I don't need it at the moment.
 
 ## License
 This library is free software; you can redistribute it and/or modify it under
