@@ -452,7 +452,7 @@ mtar_write_file(mtar_t *tar, char *fname) {
 		if(fp) {
 			size = st.st_size;
 			mtar_write_file_header(tar, fname, size, &st);
-			while ((nread = fread(buf, 1, sizeof buf, fp)) > 0) {
+			while (size > 0 && (nread = fread(buf, 1, sizeof buf, fp)) > 0) {
 				mtar_write_data(tar, buf, nread);
 			}
 			return MTAR_ESUCCESS;
