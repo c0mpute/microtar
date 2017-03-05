@@ -28,6 +28,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <fts.h>
+#include <sys/sysmacros.h>
 
 
 #include "microtar.h"
@@ -35,14 +36,20 @@
 typedef struct {
   char name[100];
   char mode[8];
-  char owner[8];
-  char group[8];
+  char uid[8];
+  char gid[8];
   char size[12];
   char mtime[12];
   char checksum[8];
   char type;
   char linkname[100];
-  char _padding[255];
+  char magic[6];
+  char version[2];
+  char uname[32];
+  char gname[32];
+  char devmajor[8];
+  char devminor[8];
+  char _padding[167];
 } mtar_raw_header_t;
 
 
@@ -109,12 +116,15 @@ static int raw_to_header(mtar_header_t *h, const mtar_raw_header_t *rh) {
 
   /* Load raw header into header */
   sscanf(rh->mode, "%o", &h->mode);
-  sscanf(rh->owner, "%o", &h->owner);
+  sscanf(rh->uid, "%o", &h->uid);
+  sscanf(rh->gid, "%o", &h->gid);
   sscanf(rh->size, "%o", &h->size);
   sscanf(rh->mtime, "%o", &h->mtime);
   h->type = rh->type;
   strcpy(h->name, rh->name);
   strcpy(h->linkname, rh->linkname);
+  sscanf(rh->devmajor, "%o", &h->devmajor);
+  sscanf(rh->devminor, "%o", &h->devminor);
 
   return MTAR_ESUCCESS;
 }
@@ -125,13 +135,21 @@ static int header_to_raw(mtar_raw_header_t *rh, const mtar_header_t *h) {
 
   /* Load header into raw header */
   memset(rh, 0, sizeof(*rh));
+  strcpy(rh->name, h->name);
   sprintf(rh->mode, "%o", h->mode);
-  sprintf(rh->owner, "%o", h->owner);
+  sprintf(rh->uid, "%o", h->uid);
+  sprintf(rh->gid, "%o", h->gid);
   sprintf(rh->size, "%o", h->size);
   sprintf(rh->mtime, "%o", h->mtime);
   rh->type = h->type ? h->type : MTAR_TREG;
-  strcpy(rh->name, h->name);
   strcpy(rh->linkname, h->linkname);
+  sprintf(rh->magic, "%s", TMAGIC);
+  sprintf(rh->version, "%s", TVERSION);
+  rh->uname[0] = '\0';
+  rh->gname[0] = '\0';
+  sprintf(rh->devmajor, "%o", h->devmajor);
+  sprintf(rh->devminor, "%o", h->devminor);
+
 
   /* Calculate and write checksum */
   chksum = checksum(rh);
@@ -402,6 +420,11 @@ int mtar_write_file_header(mtar_t *tar, const char *name, unsigned size, const s
   }
   h.mode = st->st_mode;
   h.mtime = st->st_mtime;
+  h.uid = st->st_uid;
+  h.gid = st->st_gid;
+  h.devmajor = major(st->st_dev);
+  h.devminor = minor(st->st_dev);
+
   /* Write header */
   return mtar_write_header(tar, &h);
 }

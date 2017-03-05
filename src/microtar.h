@@ -15,6 +15,8 @@
 #include <sys/file.h>
 
 #define MTAR_VERSION "0.1.0"
+#define TMAGIC   "ustar"
+#define TVERSION "00"
 
 enum {
   MTAR_ESUCCESS     =  0,
@@ -40,10 +42,13 @@ enum {
 
 typedef struct {
   unsigned mode;
-  unsigned owner;
+  unsigned uid;
+  unsigned gid;
   unsigned size;
   unsigned mtime;
   unsigned type;
+  unsigned devminor;
+  unsigned devmajor;
   char name[100];
   char linkname[100];
 } mtar_header_t;
